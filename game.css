@@ -1,0 +1,13 @@
+canvas{
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+#bg{
+    z-index: 0;
+    background-color: green;
+}
+#fg{
+    z-index: 1;
+}
