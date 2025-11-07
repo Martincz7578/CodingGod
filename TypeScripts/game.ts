@@ -1,3 +1,12 @@
+import { process, mpop } from './economy.js';
+
+export function pauseGame(){
+    paused = true;
+}
+export function resumeGame(){
+    paused = false;
+    requestAnimationFrame(UpdateGame);
+}
 /*----------------------------------------------------------------------------
  *                                                                           *
  *                        C A N V A S   S E T   U P                          *
@@ -6,12 +15,16 @@
 let sizeReduction = 1;
 
 const fg = document.getElementById("fg") as HTMLCanvasElement;
+const pbg = document.getElementById("pbg") as HTMLCanvasElement;
 const bg = document.getElementById("bg") as HTMLCanvasElement;
 const fgCtx = fg.getContext("2d") as CanvasRenderingContext2D;
+const pbgCtx = pbg.getContext("2d") as CanvasRenderingContext2D;
 const bgCtx = bg.getContext("2d") as CanvasRenderingContext2D;
 
 fg.width = screen.width/sizeReduction;
 fg.height = screen.height/sizeReduction;
+pbg.width = screen.width/sizeReduction;
+pbg.height = screen.height/sizeReduction;
 bg.width = screen.width/sizeReduction;
 bg.height = screen.height/sizeReduction;
 
@@ -25,6 +38,8 @@ let gameInterval: number;
 let started = false;
 let paused = false;
 
+let mouse = {x: 0, y: 0};
+
 //frames
 let LFT = 0;
 const targetFPS = 15;
@@ -36,7 +51,8 @@ enum buildingTypes {
     FACTORY,
     SHOP,
     FARM,
-    PATH
+    PATH,
+    DEPOT
 }
 
 /*----------------------------------------------------------------------------
@@ -49,10 +65,7 @@ const gridHeight = Math.floor(bg.height / (50/sizeReduction));
 const grid: (Building | null)[][] = [];
 
 for(let y = 0; y < gridHeight; y++) {
-    grid[y] = [];
-    for(let x = 0; x < gridWidth; x++) {
-        grid[y][x] = null;
-    }
+    grid[y] = new Array(gridWidth).fill(null);
 }
 
 let blockSize = 50/sizeReduction;
@@ -74,11 +87,21 @@ interface speed{
     y: number;
 }
 
+interface preBuildMark{
+    type: buildingTypes;
+    size: size;
+    position: position;
+    snap: position;
+    valid: boolean;
+}
+
 /*----------------------------------------------------------------------------
  *                                                                           *
  *                        B U I L D I N G S                                  *
  *                                                                           *
  *---------------------------------------------------------------------------*/ 
+
+let buildingInProgress = false;
 
 class Building {
     type: buildingTypes;
@@ -90,7 +113,11 @@ class Building {
         this.size = getBuildingSize(type);
         for(let y = this.position.y; y < this.position.y + this.size.height; y += blockSize) {
             for(let x = this.position.x; x < this.position.x + this.size.width; x += blockSize) {
-                grid[y / blockSize][x / blockSize] = this;
+                const gy = Math.floor(y / blockSize);
+                const gx = Math.floor(x / blockSize);
+                if (gy < 0 || gx < 0 || gy >= gridHeight || gx >= gridWidth) continue;
+                if (!grid[gy]) grid[gy] = new Array(gridWidth).fill(null);
+                grid[gy][gx] = this;
             }
         }
     }
@@ -111,6 +138,8 @@ function getBuildingSize(type: buildingTypes): size {
                 return {width: blockSize * 4, height: blockSize * 4};
             case buildingTypes.PATH:
                 return {width: blockSize, height: blockSize};
+            case buildingTypes.DEPOT:
+                return {width: blockSize * 2, height: blockSize * 3};
             default:
                 return {width: blockSize, height: blockSize};
         }
@@ -120,7 +149,7 @@ function renderBuildings() {
     for(let building of placedBuildings) {
         switch(building.type) {
             case buildingTypes.HOUSE:
-                bgCtx.fillStyle = "blue";
+                bgCtx.fillStyle = "cyan";
                 bgCtx.fillRect(building.position.x, building.position.y, building.size.width, building.size.height);
                 break;
             case buildingTypes.FACTORY:
@@ -128,7 +157,7 @@ function renderBuildings() {
                 bgCtx.fillRect(building.position.x, building.position.y, building.size.width, building.size.height);
                 break;
             case buildingTypes.SHOP:
-                bgCtx.fillStyle = "yellow";
+                bgCtx.fillStyle = "crimson";
                 bgCtx.fillRect(building.position.x, building.position.y, building.size.width, building.size.height);
                 break;
             case buildingTypes.FARM:
@@ -139,53 +168,145 @@ function renderBuildings() {
                 bgCtx.fillStyle = "gray";
                 bgCtx.fillRect(building.position.x, building.position.y, building.size.width, building.size.height);
                 break;
+            case buildingTypes.DEPOT:
+                bgCtx.fillStyle = "purple";
+                bgCtx.fillRect(building.position.x, building.position.y, building.size.width, building.size.height);
+                break;
             default:
                 break;
         }
     }
 }
 
-function checkBuildingPosition(playerPos: position, type: buildingTypes): boolean{
+function snapToGrid(position: position): position {
+    return {
+        x: Math.floor(position.x / blockSize) * blockSize,
+        y: Math.floor(position.y / blockSize) * blockSize
+    };
+}
+
+let preBuild: preBuildMark = {
+    type: buildingTypes.HOUSE,
+    position: {x: mouse.x, y: mouse.y},
+    size: {width: blockSize, height: blockSize},
+    snap: {x: 0, y: 0},
+    valid: false
+};
+
+function renderPreBuild(preBuild: preBuildMark, color: string = "#0000FF") {
+    pbgCtx.save();
+    pbgCtx.globalAlpha = 0.5;
+    pbgCtx.fillStyle = color;
+    pbgCtx.fillRect(preBuild.snap.x, preBuild.snap.y, preBuild.size.width, preBuild.size.height);
+    const sx = Math.max(0, preBuild.snap.x);
+    const sy = Math.max(0, preBuild.snap.y);
+    const sw = Math.max(0, preBuild.size.width);
+    const sh = Math.max(0, preBuild.size.height);
+
+    if (sy > 0) pbgCtx.clearRect(0, 0, pbg.width, sy);
+    const bottomY = sy + sh;
+    if (bottomY < pbg.height) pbgCtx.clearRect(0, bottomY, pbg.width, pbg.height - bottomY);
+    if (sx > 0) pbgCtx.clearRect(0, sy, sx, sh);
+    const rightX = sx + sw;
+    if (rightX < pbg.width) pbgCtx.clearRect(rightX, sy, pbg.width - rightX, sh);
+
+    let clearArea = {x: 0, y: 0, width: 0, height: 0};
+    pbgCtx.clearRect(clearArea.x, clearArea.y, clearArea.width, clearArea.height);
+    pbgCtx.restore();
+}
+
+function checkBuildingPosition(type: buildingTypes): boolean | null {
     let size: size = getBuildingSize(type);
 
-    if(playerPos.x < 0 || playerPos.y < 0 || playerPos.x + size.width > bg.width || playerPos.y + size.height > bg.height) {
-        return true;
+    preBuild.type = type;
+    preBuild.size = size;
+    preBuild.snap = snapToGrid({x: mouse.x, y: mouse.y});
+
+    if(buildingInProgress) {
+        preBuild.position = preBuild.snap;
+    }else{
+        pbgCtx.clearRect(preBuild.snap.x, preBuild.snap.y, preBuild.size.width, preBuild.size.height);
     }
 
-    for(let placedBuilding of placedBuildings) {
-        if(!(playerPos.x + size.width <= placedBuilding.position.x ||
-             playerPos.x >= placedBuilding.position.x + placedBuilding.size.width ||
-             playerPos.y + size.height <= placedBuilding.position.y ||
-             playerPos.y >= placedBuilding.position.y + placedBuilding.size.height)) {
+    if(preBuild.snap.x < 0 || preBuild.snap.y < 0 || preBuild.snap.x + size.width > bg.width || preBuild.snap.y + size.height > bg.height) {
+        if(buildingInProgress) {
+            renderPreBuild(preBuild, "#FFFF00");
+            return null;
+        }else{
             return true;
         }
     }
 
-    for(let y = playerPos.y; y < playerPos.y + size.height; y += blockSize) {
-        for(let x = playerPos.x; x < playerPos.x + size.width; x += blockSize) {
+    for(let placedBuilding of placedBuildings) {
+        if(!(preBuild.snap.x + size.width <= placedBuilding.position.x ||
+             preBuild.snap.x >= placedBuilding.position.x + placedBuilding.size.width ||
+             preBuild.snap.y + size.height <= placedBuilding.position.y ||
+             preBuild.snap.y >= placedBuilding.position.y + placedBuilding.size.height)) {
+            if(buildingInProgress) {
+                preBuild.valid = false;
+                renderPreBuild(preBuild, "#FF0000");
+                return null;
+            }
+            return true;
+        }
+    }
+
+    if(!(preBuild.snap.x + size.width <= player.location.x ||
+            preBuild.snap.x >= player.location.x + player.size.width ||
+            preBuild.snap.y + size.height <= player.location.y ||
+            preBuild.snap.y >= player.location.y + player.size.height)) {
+        if(buildingInProgress) {
+            preBuild.valid = false;
+            renderPreBuild(preBuild, "#FFFF00");
+            return null;
+        }
+        return true;
+    }
+
+    for(let y = preBuild.snap.y; y < preBuild.snap.y + size.height; y += blockSize) {
+        for(let x = preBuild.snap.x; x < preBuild.snap.x + size.width; x += blockSize) {
             const gy = Math.floor(y / blockSize);
             const gx = Math.floor(x / blockSize);
             if(gy < 0 || gx < 0 || gy >= gridHeight || gx >= gridWidth) {
-                return true;
+                if(buildingInProgress) {
+                    preBuild.valid = false;
+                    renderPreBuild(preBuild, "#FF0000");
+                    return null;
+                }else{
+                    return true;
+                }
             }
-            if(grid[gy][gx] !== null) {
-                return true;
+            if (grid[gy]?.[gx] != null) {
+                if(buildingInProgress) {
+                    preBuild.valid = false;
+                    renderPreBuild(preBuild, "#FF0000");
+                    return null;
+                }else{
+                    return true;
+                }
             }
         }
     }
 
+    if(buildingInProgress) {
+        preBuild.valid = true;
+        renderPreBuild(preBuild);
+        return null;
+    }
     return false;
 }
 
 
-function placeBuilding(type: buildingTypes, position: position): boolean {
-    if(!checkBuildingPosition(position, type)) {
-        let newBuilding = new Building(type, position);
+function placeBuilding(type: buildingTypes): boolean {
+    let status = checkBuildingPosition(type);
+    if(status == null) return false;
+    if(!status) {
+        let newBuilding = new Building(type, preBuild.snap);
         placedBuildings.push(newBuilding);
         renderBuildings();
         return true;
     }else{
-        alert("Cannot place building here!");
+        if(!buildingInProgress) mpop("Cannot place building here!");
         return false;
     }
 }
@@ -197,6 +318,7 @@ function placeBuilding(type: buildingTypes, position: position): boolean {
  *---------------------------------------------------------------------------*/ 
 
 function StartGame() {
+    started = true;
     fgCtx.fillStyle = "orange";
     fgCtx.fillRect(player.location.x, player.location.y, blockSize / 2, blockSize / 2); 
     requestAnimationFrame(UpdateGame);
@@ -204,21 +326,33 @@ function StartGame() {
 
 function UpdateGame(timeStamp: number) {
     if(paused) return;
+    if(buildingInProgress){
+        checkBuildingPosition(preBuild.type);
+        console.log("Building in progress", mouse);
+    }
     frame++;
     const delta = timeStamp - LFT;
     if(delta >= frameDuration) {
         LFT = timeStamp - (delta % frameDuration);
-        DrawGame();
+        Render();
+        process(
+            placedBuildings.filter(b => b.type === buildingTypes.DEPOT).length,
+            placedBuildings.filter(b => b.type === buildingTypes.FACTORY).length,
+            placedBuildings.filter(b => b.type === buildingTypes.SHOP).length,
+            placedBuildings.filter(b => b.type === buildingTypes.HOUSE).length,
+            frame
+        );
     }
+    if(frame == 3000) mpop('Thx for playing Coding God! Please consider supporting me on Pateron <br> <a href="https://patreon.com/RUN1_IT"><img src="https://c5.patreon.com/external/favicon/rebrand/pwa-192.png" alt="Patreon" height="16" width="16">Support Me!</a>')
     requestAnimationFrame(UpdateGame);
 }
 
-function DrawGame() {
+function Render() {
     //player
     if(player.moved) {
         fgCtx.clearRect(player.location.x-blockSize*2, player.location.y-blockSize*2, blockSize*4, blockSize*4);
         fgCtx.fillStyle = "orange";
-        fgCtx.fillRect(player.location.x, player.location.y, blockSize / 2, blockSize / 2);
+        fgCtx.fillRect(player.location.x, player.location.y, player.size.width, player.size.height);
         player.moved = false;
     }
 }
@@ -232,6 +366,7 @@ function DrawGame() {
 let player = {
     speed: 5/sizeReduction,
     location: {x: fg.width / 2, y: fg.height / 2},
+    size: {width: blockSize / 2, height: blockSize / 2},
     moved: false
 };
 
@@ -259,22 +394,38 @@ function movePlayerFromBuilding(building: buildingTypes) {
     }
 }
 
+addEventListener("mousemove", function(event) {
+    const rect = fg.getBoundingClientRect();
+    const mouseX = (event.clientX - rect.left) / (rect.right - rect.left) * fg.width;
+    const mouseY = (event.clientY - rect.top) / (rect.bottom - rect.top) * fg.height;
+    mouse = {x: mouseX, y: mouseY};
+});
+
 addEventListener("keydown", function(event) {
     let pos: position = {x: (Math.floor(player.location.x / blockSize) * blockSize), y: (Math.floor(player.location.y / blockSize) * blockSize)};
     if(event.key === "b") {
-        if(placeBuilding(buildingTypes.HOUSE, pos))movePlayerFromBuilding(buildingTypes.HOUSE);
+        buildingInProgress = true;
+        if(placeBuilding(buildingTypes.HOUSE))movePlayerFromBuilding(buildingTypes.HOUSE);
     }
     if(event.key === "p") {
-        placeBuilding(buildingTypes.PATH, pos);
+        buildingInProgress = true;
+        placeBuilding(buildingTypes.PATH);
     }
     if(event.key === "f") {
-        if(placeBuilding(buildingTypes.FACTORY, pos))movePlayerFromBuilding(buildingTypes.FACTORY);
+        buildingInProgress = true;
+        if(placeBuilding(buildingTypes.FACTORY))movePlayerFromBuilding(buildingTypes.FACTORY);
     }
     if(event.key === "t") {
-        if(placeBuilding(buildingTypes.SHOP, pos))movePlayerFromBuilding(buildingTypes.SHOP);
+        buildingInProgress = true;
+        if(placeBuilding(buildingTypes.SHOP))movePlayerFromBuilding(buildingTypes.SHOP);
     }
     if(event.key === "r") {
-        placeBuilding(buildingTypes.FARM, pos)
+        buildingInProgress = true;
+        placeBuilding(buildingTypes.FARM);
+    }
+    if(event.key === "g") {
+        buildingInProgress = true;
+        if(placeBuilding(buildingTypes.DEPOT))movePlayerFromBuilding(buildingTypes.DEPOT);
     }
 
 
@@ -300,9 +451,17 @@ addEventListener("keydown", function(event) {
         player.moved = true;
     }
     if(event.key === " ") {
-        if(!started) {
-            StartGame();
-            started = true;
+        if(buildingInProgress){
+            buildingInProgress = false;
+            placeBuilding(preBuild.type);
+            if(preBuild.type == buildingTypes.PATH) buildingInProgress = true;
+            pbgCtx.clearRect(0, 0, pbg.width, pbg.height);
+        }
+    }
+    if(event.key === "Escape") {
+        if(buildingInProgress){
+            buildingInProgress = false;
+            pbgCtx.clearRect(0, 0, pbg.width, pbg.height);
         }
     }
 });
@@ -335,3 +494,5 @@ addEventListener("visibilitychange", function() {
         paused = false;
     }
 });
+
+StartGame();

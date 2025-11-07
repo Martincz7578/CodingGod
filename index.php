@@ -21,12 +21,21 @@ if(isset($_POST['theme'])){
             <option value="light"<?php if ($theme == 'light') echo ' selected'; ?>>Light</option>
             <option value="dark"<?php if ($theme == 'dark') echo ' selected'; ?>>Dark</option>
         </select>
+        <span id="raw"></span>
+        <span id="processed"></span>
+        <span id="money"></span>
     </header>
     <main>
         <canvas id="fg" width="800" height="600"></canvas>
+        <div class="modal">
+            <div class="mheader"><h3>Notice</h3></div>
+            <div class="mcontent"><p id="content"></p></div>
+            <div class="mfooter"><button id="mclose"></button></div>
+        </div>
+        <canvas id="pbg" width="800" height="600"></canvas>
         <canvas id="bg" width="800" height="600"></canvas>
     </main>
 </body>
-<script src="/Scripts/game.js"></script>
-<script src="/Scripts/theme.js"></script>
+<script type="module" src="/Scripts/game.js"></script>
+<script type="module" src="/Scripts/economy.js"></script>
 </html>
