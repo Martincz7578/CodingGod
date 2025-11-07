@@ -5,9 +5,46 @@ canvas{
 }
 
 #bg{
+    margin-top: 50px;
     z-index: 0;
     background-color: green;
 }
 #fg{
+    margin-top: 50px;
     z-index: 1;
+}
+
+body{
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    transition: background-color 0.5s, color 0.5s;
+}
+
+select{
+    margin: 1em;
+    padding: 0.2em;
+}
+
+body.light{
+    background-color: #f0f0f0;
+    color: #222;
+}
+
+body.light select{
+    background-color: #fff;
+    color: #222;
+    border: 1px solid #ccc;
+}
+
+
+body.dark{
+    background-color: #222;
+    color: #eee;
+}
+
+body.dark select{
+    background-color: #333;
+    color: #eee;
+    border: 1px solid #555;
 }

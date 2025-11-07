@@ -9,6 +9,7 @@ const fg = document.getElementById("fg") as HTMLCanvasElement;
 const bg = document.getElementById("bg") as HTMLCanvasElement;
 const fgCtx = fg.getContext("2d") as CanvasRenderingContext2D;
 const bgCtx = bg.getContext("2d") as CanvasRenderingContext2D;
+
 fg.width = screen.width/sizeReduction;
 fg.height = screen.height/sizeReduction;
 bg.width = screen.width/sizeReduction;
