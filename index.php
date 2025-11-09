@@ -24,6 +24,8 @@ if(isset($_POST['theme'])){
         <span id="raw"></span>
         <span id="processed"></span>
         <span id="money"></span>
+        <span id="food"></span>
+        <span id="priceTag"></span>
     </header>
     <main>
         <canvas id="fg" width="800" height="600"></canvas>
@@ -35,6 +37,11 @@ if(isset($_POST['theme'])){
         <canvas id="pbg" width="800" height="600"></canvas>
         <canvas id="bg" width="800" height="600"></canvas>
     </main>
+    <img src="/imgs/depot.jpg" alt="" id="depot">
+    <img src="/imgs/factory.jpg" alt="" id="factory">
+    <img src="/imgs/farm.jpg" alt="" id="farm">
+    <img src="/imgs/house.jpg" alt="" id="house">
+    <img src="/imgs/store.jpg" alt="" id="store">
 </body>
 <script type="module" src="/Scripts/game.js"></script>
 <script type="module" src="/Scripts/economy.js"></script>

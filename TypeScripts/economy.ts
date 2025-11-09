@@ -1,10 +1,11 @@
-import { pauseGame, resumeGame } from "./game.js";
+import { pauseGame, resumeGame, updatePrices } from "./game.js";
+import type { data } from "./game.js";
 /*----------------------------------------------------------------------------
  *                                                                           *
  *                        G A M E   U T I L S                                *
  *                                                                           *
  *---------------------------------------------------------------------------*/ 
-export function process(depots: number, factories: number, shops: number, houses: number, frames: number) {
+export function process(depots: number, factories: number, shops: number, houses: number, farms: number, frames: number) {
     if(frames % 15 === 0){ //every second
         //depot process
         playerStats.raw += depots * IPS;
@@ -21,8 +22,27 @@ export function process(depots: number, factories: number, shops: number, houses
                 playerStats.processed -= housePurchase;
             }
         }
+        //hunger process
+        playerStats.food += farms * 5;
+        if(playerStats.food >= houses){
+            playerStats.food -= houses;
+        } else {
+            mpop("You have run out of food to feed your population! Build farms to produce more food.", "Uh oh");
+        }
     }
     updateStatsDisplay();
+    updatePrices(depots, factories, shops, houses, farms);
+}
+
+export function buyBuilding(data: data): boolean {
+    if(playerStats.money >= data.price){
+        playerStats.money -= data.price;
+        updateStatsDisplay();
+        return true;
+    }else{
+        mpop("You do not have enough money to build this building.", "Oh no");
+        return false;
+    }
 }
 
 export function mpop(content: string, closeText: string = "Close") {
@@ -48,13 +68,15 @@ export function mpop(content: string, closeText: string = "Close") {
 const rawSpan = document.getElementById("raw") as HTMLSpanElement;
 const processedSpan = document.getElementById("processed") as HTMLSpanElement;
 const moneySpan = document.getElementById("money") as HTMLSpanElement;
+const foodSpan = document.getElementById("food") as HTMLSpanElement;
 
-let playerStats= {raw: 0, processed: 0, money: 1000};
+let playerStats= {raw: 0, processed: 0, money: 1000, food: 100};
 
 function updateStatsDisplay() {
     rawSpan.innerText = `Raw: ${playerStats.raw}`;
     processedSpan.innerText = `Processed: ${playerStats.processed}`;
     moneySpan.innerText = `Money: ${playerStats.money}`;
+    foodSpan.innerText = `Food: ${playerStats.food}`;
 }
 
 const IPS = 60; //import per second

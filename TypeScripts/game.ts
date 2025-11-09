@@ -1,4 +1,4 @@
-import { process, mpop } from './economy.js';
+import { process, mpop, buyBuilding } from './economy.js';
 
 export function pauseGame(){
     paused = true;
@@ -28,6 +28,32 @@ pbg.height = screen.height/sizeReduction;
 bg.width = screen.width/sizeReduction;
 bg.height = screen.height/sizeReduction;
 
+const depotImg = document.getElementById("depot") as HTMLImageElement;
+const factoryImg = document.getElementById("factory") as HTMLImageElement;
+const farmImg = document.getElementById("farm") as HTMLImageElement;
+const houseImg = document.getElementById("house") as HTMLImageElement;
+const storeImg = document.getElementById("store") as HTMLImageElement;
+
+depotImg.style.display = "none";
+factoryImg.style.display = "none";
+farmImg.style.display = "none";
+houseImg.style.display = "none";
+storeImg.style.display = "none";
+
+depotImg.height = 150/sizeReduction;
+factoryImg.height = 150/sizeReduction;
+farmImg.height = 200/sizeReduction;
+houseImg.height = 100/sizeReduction;
+storeImg.height = 100/sizeReduction;
+
+depotImg.width = 100/sizeReduction;
+factoryImg.width = 150/sizeReduction;
+farmImg.width = 200/sizeReduction;
+houseImg.width = 100/sizeReduction;
+storeImg.width = 100/sizeReduction;
+
+const priceTag = document.getElementById("priceTag") as HTMLDivElement;
+
 /*----------------------------------------------------------------------------
  *                                                                           *
  *                        G A M E   U T I L S                                *
@@ -55,6 +81,25 @@ enum buildingTypes {
     DEPOT
 }
 
+let blockSize = 50/sizeReduction;
+
+let buildings = {
+    house: {price: 0, koeficient: 1.5,size: {width: 2*blockSize, height: 2*blockSize}},
+    factory: {price: 0, koeficient: 3, size: {width: 3*blockSize, height: 3*blockSize}},
+    shop: {price: 0, koeficient: 2, size: {width: 2*blockSize, height: 2*blockSize}},
+    farm: {price: 0, koeficient: 2, size: {width: 4*blockSize, height: 4*blockSize}},
+    depot: {price: 0, koeficient: 2.5, size: {width: 2*blockSize, height: 3*blockSize}},
+    path: {price: 0, koeficient: 1, size: {width: 1*blockSize, height: 1*blockSize}}
+};
+
+export function updatePrices(depots: number, factories: number, shops: number, houses: number, farms: number) {
+    buildings.house.price = Math.floor(100 * Math.pow(buildings.house.koeficient, houses))-100;
+    buildings.factory.price = Math.floor(500 * Math.pow(buildings.factory.koeficient, factories))-500;
+    buildings.shop.price = Math.floor(300 * Math.pow(buildings.shop.koeficient, shops))-300;
+    buildings.farm.price = Math.floor(400 * Math.pow(buildings.farm.koeficient, farms))-400;
+    buildings.depot.price = Math.floor(600 * Math.pow(buildings.depot.koeficient, depots))-600;
+}
+
 /*----------------------------------------------------------------------------
  *                                                                           *
  *                        T H E   G R I D                                    *
@@ -67,8 +112,6 @@ const grid: (Building | null)[][] = [];
 for(let y = 0; y < gridHeight; y++) {
     grid[y] = new Array(gridWidth).fill(null);
 }
-
-let blockSize = 50/sizeReduction;
 
 //General interfaces
 
@@ -95,6 +138,11 @@ interface preBuildMark{
     valid: boolean;
 }
 
+export interface data{
+    price: number;
+    size: size;
+}
+
 /*----------------------------------------------------------------------------
  *                                                                           *
  *                        B U I L D I N G S                                  *
@@ -110,7 +158,7 @@ class Building {
     constructor(type: buildingTypes, position: position) {
         this.type = type;
         this.position = position;
-        this.size = getBuildingSize(type);
+        this.size = getBuildingData(type).size;
         for(let y = this.position.y; y < this.position.y + this.size.height; y += blockSize) {
             for(let x = this.position.x; x < this.position.x + this.size.width; x += blockSize) {
                 const gy = Math.floor(y / blockSize);
@@ -125,23 +173,22 @@ class Building {
 
 let placedBuildings: Building[] = [];
 
-
-function getBuildingSize(type: buildingTypes): size {
+function getBuildingData(type: buildingTypes): data {
     switch(type) {
             case buildingTypes.HOUSE:
-                return {width: blockSize * 2, height: blockSize * 2};
+                return buildings.house;
             case buildingTypes.FACTORY:
-                return {width: blockSize * 3, height: blockSize * 3};
+                return buildings.factory;
             case buildingTypes.SHOP:
-                return {width: blockSize * 2, height: blockSize * 2};
+                return buildings.shop;
             case buildingTypes.FARM:
-                return {width: blockSize * 4, height: blockSize * 4};
+                return buildings.farm;
             case buildingTypes.PATH:
-                return {width: blockSize, height: blockSize};
+                return buildings.path;
             case buildingTypes.DEPOT:
-                return {width: blockSize * 2, height: blockSize * 3};
+                return buildings.depot;
             default:
-                return {width: blockSize, height: blockSize};
+                return {price: 0, size: {width: blockSize, height: blockSize}};
         }
 }
 
@@ -149,28 +196,33 @@ function renderBuildings() {
     for(let building of placedBuildings) {
         switch(building.type) {
             case buildingTypes.HOUSE:
-                bgCtx.fillStyle = "cyan";
-                bgCtx.fillRect(building.position.x, building.position.y, building.size.width, building.size.height);
+                //bgCtx.fillStyle = "cyan";
+                //bgCtx.fillRect(building.position.x, building.position.y, building.size.width, building.size.height);
+                bgCtx.drawImage(houseImg, building.position.x, building.position.y, building.size.width, building.size.height);
                 break;
             case buildingTypes.FACTORY:
-                bgCtx.fillStyle = "black";
-                bgCtx.fillRect(building.position.x, building.position.y, building.size.width, building.size.height);
+                //bgCtx.fillStyle = "black";
+                //bgCtx.fillRect(building.position.x, building.position.y, building.size.width, building.size.height);
+                bgCtx.drawImage(factoryImg, building.position.x, building.position.y, building.size.width, building.size.height);
                 break;
             case buildingTypes.SHOP:
-                bgCtx.fillStyle = "crimson";
-                bgCtx.fillRect(building.position.x, building.position.y, building.size.width, building.size.height);
+                //bgCtx.fillStyle = "crimson";
+                //bgCtx.fillRect(building.position.x, building.position.y, building.size.width, building.size.height);
+                bgCtx.drawImage(storeImg, building.position.x, building.position.y, building.size.width, building.size.height);
                 break;
             case buildingTypes.FARM:
-                bgCtx.fillStyle = "brown";
-                bgCtx.fillRect(building.position.x, building.position.y, building.size.width, building.size.height);
+                //bgCtx.fillStyle = "brown";
+                //bgCtx.fillRect(building.position.x, building.position.y, building.size.width, building.size.height);
+                bgCtx.drawImage(farmImg, building.position.x, building.position.y, building.size.width, building.size.height);
                 break;
             case buildingTypes.PATH:
                 bgCtx.fillStyle = "gray";
                 bgCtx.fillRect(building.position.x, building.position.y, building.size.width, building.size.height);
                 break;
             case buildingTypes.DEPOT:
-                bgCtx.fillStyle = "purple";
-                bgCtx.fillRect(building.position.x, building.position.y, building.size.width, building.size.height);
+                //bgCtx.fillStyle = "purple";
+                //bgCtx.fillRect(building.position.x, building.position.y, building.size.width, building.size.height);
+                bgCtx.drawImage(depotImg, building.position.x, building.position.y, building.size.width, building.size.height);
                 break;
             default:
                 break;
@@ -203,6 +255,8 @@ function renderPreBuild(preBuild: preBuildMark, color: string = "#0000FF") {
     const sw = Math.max(0, preBuild.size.width);
     const sh = Math.max(0, preBuild.size.height);
 
+    priceTag.innerText = `Price: ${getBuildingData(preBuild.type).price} Money`;
+
     if (sy > 0) pbgCtx.clearRect(0, 0, pbg.width, sy);
     const bottomY = sy + sh;
     if (bottomY < pbg.height) pbgCtx.clearRect(0, bottomY, pbg.width, pbg.height - bottomY);
@@ -216,7 +270,7 @@ function renderPreBuild(preBuild: preBuildMark, color: string = "#0000FF") {
 }
 
 function checkBuildingPosition(type: buildingTypes): boolean | null {
-    let size: size = getBuildingSize(type);
+    let size: size = getBuildingData(type).size;
 
     preBuild.type = type;
     preBuild.size = size;
@@ -300,6 +354,7 @@ function checkBuildingPosition(type: buildingTypes): boolean | null {
 function placeBuilding(type: buildingTypes): boolean {
     let status = checkBuildingPosition(type);
     if(status == null) return false;
+    if(!buyBuilding(getBuildingData(type))) return false;
     if(!status) {
         let newBuilding = new Building(type, preBuild.snap);
         placedBuildings.push(newBuilding);
@@ -308,6 +363,31 @@ function placeBuilding(type: buildingTypes): boolean {
     }else{
         if(!buildingInProgress) mpop("Cannot place building here!");
         return false;
+    }
+}
+
+function removeBuildingAtPosition(position: position) {
+    const snappedPos = snapToGrid(position);
+    for(let i = 0; i < placedBuildings.length; i++) {
+        const building = placedBuildings[i];
+        if (!building) continue;
+        if(building.position.x === snappedPos.x && building.position.y === snappedPos.y) {
+            placedBuildings.splice(i, 1);
+            for(let y = building.position.y; y < building.position.y + building.size.height; y += blockSize) {
+                for(let x = building.position.x; x < building.position.x + building.size.width; x += blockSize) {
+                    const gy = Math.floor(y / blockSize);
+                    const gx = Math.floor(x / blockSize);
+                    if (gy < 0 || gx < 0 || gy >= gridHeight || gx >= gridWidth) continue;
+                    const row = grid[gy];
+                    if (row && row[gx] === building) {
+                        row[gx] = null;
+                    }
+                }
+            }
+            bgCtx.clearRect(0, 0, bg.width, bg.height);
+            renderBuildings();
+            return;
+        }
     }
 }
 
@@ -328,7 +408,6 @@ function UpdateGame(timeStamp: number) {
     if(paused) return;
     if(buildingInProgress){
         checkBuildingPosition(preBuild.type);
-        console.log("Building in progress", mouse);
     }
     frame++;
     const delta = timeStamp - LFT;
@@ -340,6 +419,7 @@ function UpdateGame(timeStamp: number) {
             placedBuildings.filter(b => b.type === buildingTypes.FACTORY).length,
             placedBuildings.filter(b => b.type === buildingTypes.SHOP).length,
             placedBuildings.filter(b => b.type === buildingTypes.HOUSE).length,
+            placedBuildings.filter(b => b.type === buildingTypes.FARM).length,
             frame
         );
     }
@@ -370,18 +450,18 @@ let player = {
     moved: false
 };
 
-function movePlayerFromBuilding(building: buildingTypes) {
-    if(!playerBuildingCollision({x: player.location.x+getBuildingSize(building).width+blockSize, y: player.location.y})) {
+/*function movePlayerFromBuilding(building: buildingTypes) {
+    if(!playerBuildingCollision({x: player.location.x+getBuildingData(building).size.width+blockSize, y: player.location.y})) {
         fgCtx.clearRect(player.location.x-blockSize*2, player.location.y-blockSize*2, blockSize*4, blockSize*4);
-        player.location.x += getBuildingSize(building).width;
+        player.location.x += getBuildingData(building).size.width;
         player.moved = true;
     }else if(!playerBuildingCollision({x: player.location.x-blockSize, y: player.location.y})) {
         fgCtx.clearRect(player.location.x-blockSize*2, player.location.y-blockSize*2, blockSize*4, blockSize*4);
         player.location.x -= blockSize;
         player.moved = true;
-    }else if(!playerBuildingCollision({x: player.location.x, y: player.location.y+getBuildingSize(building).height+blockSize})) {
+    }else if(!playerBuildingCollision({x: player.location.x, y: player.location.y+getBuildingData(building).size.height+blockSize})) {
         fgCtx.clearRect(player.location.x-blockSize*2, player.location.y-blockSize*2, blockSize*4, blockSize*4);
-        player.location.y += getBuildingSize(building).height;
+        player.location.y += getBuildingData(building).size.height;
         player.moved = true;
     }else if(!playerBuildingCollision({x: player.location.x, y: player.location.y-blockSize})) {
         fgCtx.clearRect(player.location.x-blockSize*2, player.location.y-blockSize*2, blockSize*4, blockSize*4);
@@ -392,7 +472,7 @@ function movePlayerFromBuilding(building: buildingTypes) {
         player.location = {x: fg.width / 2, y: fg.height / 2};
         player.moved = true;
     }
-}
+}*/
 
 addEventListener("mousemove", function(event) {
     const rect = fg.getBoundingClientRect();
@@ -405,7 +485,8 @@ addEventListener("keydown", function(event) {
     let pos: position = {x: (Math.floor(player.location.x / blockSize) * blockSize), y: (Math.floor(player.location.y / blockSize) * blockSize)};
     if(event.key === "b") {
         buildingInProgress = true;
-        if(placeBuilding(buildingTypes.HOUSE))movePlayerFromBuilding(buildingTypes.HOUSE);
+        placeBuilding(buildingTypes.HOUSE);
+        //if(placeBuilding(buildingTypes.HOUSE))movePlayerFromBuilding(buildingTypes.HOUSE);
     }
     if(event.key === "p") {
         buildingInProgress = true;
@@ -413,11 +494,13 @@ addEventListener("keydown", function(event) {
     }
     if(event.key === "f") {
         buildingInProgress = true;
-        if(placeBuilding(buildingTypes.FACTORY))movePlayerFromBuilding(buildingTypes.FACTORY);
+        placeBuilding(buildingTypes.FACTORY);
+        //if(placeBuilding(buildingTypes.FACTORY))movePlayerFromBuilding(buildingTypes.FACTORY);
     }
     if(event.key === "t") {
         buildingInProgress = true;
-        if(placeBuilding(buildingTypes.SHOP))movePlayerFromBuilding(buildingTypes.SHOP);
+        placeBuilding(buildingTypes.SHOP);
+        //if(placeBuilding(buildingTypes.SHOP))movePlayerFromBuilding(buildingTypes.SHOP);
     }
     if(event.key === "r") {
         buildingInProgress = true;
@@ -425,7 +508,14 @@ addEventListener("keydown", function(event) {
     }
     if(event.key === "g") {
         buildingInProgress = true;
-        if(placeBuilding(buildingTypes.DEPOT))movePlayerFromBuilding(buildingTypes.DEPOT);
+        placeBuilding(buildingTypes.DEPOT);
+        //if(placeBuilding(buildingTypes.DEPOT))movePlayerFromBuilding(buildingTypes.DEPOT);
+    }
+    if(event.key === "c"){
+        buildingInProgress = false;
+        priceTag.innerText = ``;
+        removeBuildingAtPosition(mouse);
+        pbgCtx.clearRect(0, 0, pbg.width, pbg.height);
     }
 
 
@@ -457,11 +547,13 @@ addEventListener("keydown", function(event) {
             if(preBuild.type == buildingTypes.PATH) buildingInProgress = true;
             pbgCtx.clearRect(0, 0, pbg.width, pbg.height);
         }
+        priceTag.innerText = ``;
     }
     if(event.key === "Escape") {
         if(buildingInProgress){
             buildingInProgress = false;
             pbgCtx.clearRect(0, 0, pbg.width, pbg.height);
+            priceTag.innerText = ``;
         }
     }
 });
