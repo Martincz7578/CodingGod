@@ -6,7 +6,6 @@ To play this game you need PHP 8.4 and TS 5.9.
 
 Upcoming features:
 <ul>
-    <li>Interior of some buidlings</li>
     <li>New buildings</li>
     <li>Proper textures</li>
     <li>And more!!!</li>
