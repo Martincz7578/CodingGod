@@ -2,6 +2,7 @@ canvas{
     position: absolute;
     top: 60px;
     left: 0;
+    pointer-events: none;
 }
 
 #bg{

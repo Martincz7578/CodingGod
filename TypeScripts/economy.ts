@@ -13,14 +13,14 @@ interface resource  {name: string, price: number, k: number, minimum: number, gr
 
 let resources = {
     raw: {
-        coal: {name: "coal", price: 14, k: 0.20, minimum: 5, growth: 0, d: 0.2, t0: 3000, tsat: 6000},
-        iron: {name: "iron", price: 13, k: 0.15, minimum: 4, growth: 0, d: 0.4, t0: 4000, tsat: 5000},
-        stone: {name: "stone", price: 7, k: 0.03, minimum: 1, growth: 0, d: 0.1, t0: 1500, tsat: 3000},
+        coal: {name: "coal", price: 14, k: 0.20, minimum: 5, growth: 0, d: 0.2, t0: 100, tsat: 5000},
+        iron: {name: "iron", price: 13, k: 0.15, minimum: 4, growth: 0, d: 0.4, t0: 200, tsat: 10000},
+        stone: {name: "stone", price: 7, k: 0.03, minimum: 1, growth: 0, d: 0.1, t0: 50, tsat: 2500},
     },
     processed:{
-        refinedCoal: {name: "refinedCoal", price: 27, k: 0.20, minimum: 18, growth: 0, d: 0.1, t0: 6000, tsat: 10000},
-        steel: {name: "steel", price: 55, k: 0.15, minimum: 46, growth: 0, d: 0.8, t0: 4000, tsat: 4500},
-        stoneBricks: {name: "stoneBricks", price: 13, k: 0.10, minimum: 4, growth: 0, d: 0.1, t0: 3000, tsat: 6000},
+        refinedCoal: {name: "refinedCoal", price: 27, k: 0.20, minimum: 18, growth: 0, d: 0.1, t0: 100, tsat: 5000},
+        steel: {name: "steel", price: 55, k: 0.15, minimum: 46, growth: 0, d: 0.8, t0: 200, tsat: 10000},
+        stoneBricks: {name: "stoneBricks", price: 13, k: 0.10, minimum: 4, growth: 0, d: 0.1, t0: 50, tsat: 2500},
     }
 };
 
@@ -47,18 +47,33 @@ let populationData = {
     hunger: false,
 }
 
+let demands = {
+    raw: {
+        coal: 0,
+        iron: 0,
+        stone: 0
+    },
+    processed: {
+        refinedCoal: 0,
+        steel: 0,
+        stoneBricks: 0
+    }
+}
+
 let shopsOpenned = false;
 
 export function process(depots: number, foundries: number, shops: number, houses: number, farms: number, mines: number, masons: number) {
     if(frame % 15 === 0){ //every second
-        const Demands = {
-            coal: Math.floor(priceChange(resources.raw.coal, mines ? mines : 1, shopsOpenned && shops > 0 ? shopsOpenned : false)),
-            iron: Math.floor(priceChange(resources.raw.iron, mines ? mines : 1, shopsOpenned && shops > 0 ? shopsOpenned : false)),
-            stone: Math.floor(priceChange(resources.raw.stone, mines ? mines : 1, shopsOpenned && shops > 0 ? shopsOpenned : false)),
-            refinedCoal: Math.floor(priceChange(resources.processed.refinedCoal, foundries ? foundries : 1, shopsOpenned && shops > 0 ? shopsOpenned : false)),
-            steel: Math.floor(priceChange(resources.processed.steel, foundries ? foundries : 1, shopsOpenned && shops > 0 ? shopsOpenned : false)),
-            stoneBricks: Math.floor(priceChange(resources.processed.stoneBricks, foundries ? foundries : 1, shopsOpenned && shops > 0 ? shopsOpenned : false)),
-        }
+        demands.raw.coal = Math.floor(priceChange(resources.raw.coal, mines ? mines : 1, shopsOpenned && shops > 0 ? shopsOpenned : false));
+        demands.raw.iron = Math.floor(priceChange(resources.raw.iron, mines ? mines : 1, shopsOpenned && shops > 0 ? shopsOpenned : false));
+        demands.raw.stone = Math.floor(priceChange(resources.raw.stone, mines ? mines : 1, shopsOpenned && shops > 0 ? shopsOpenned : false));
+        demands.processed.refinedCoal = Math.floor(priceChange(resources.processed.refinedCoal, foundries ? foundries : 1, shopsOpenned && shops > 0 ? shopsOpenned : false));
+        demands.processed.steel = Math.floor(priceChange(resources.processed.steel, foundries ? foundries : 1, shopsOpenned && shops > 0 ? shopsOpenned : false));
+        demands.processed.stoneBricks = Math.floor(priceChange(resources.processed.stoneBricks, masons ? masons : 1, shopsOpenned && shops > 0 ? shopsOpenned : false));
+
+        console.log(demands);
+        console.log(resources);
+
         //raw resource gathering
         playerStats.raw.coal += mines * buildings.mines.productionSpeed * productionAmplifiers.mines;
         playerStats.raw.iron += mines * buildings.mines.productionSpeed * productionAmplifiers.mines;
@@ -88,13 +103,13 @@ export function process(depots: number, foundries: number, shops: number, houses
         
         //cash flow
         if(shopsOpenned && shops > 0){
-            if(playerStats.processed.steel > Demands.steel*shops){
-                playerStats.money += Demands.steel * (resources.processed.steel.price*shops);
-                playerStats.processed.steel -= Demands.steel*shops;
+            if(playerStats.processed.steel > demands.processed.steel*shops){
+                playerStats.money += demands.processed.steel * (resources.processed.steel.price*shops);
+                playerStats.processed.steel -= demands.processed.steel*shops;
             }
-            if(playerStats.processed.stoneBricks > Demands.stoneBricks*shops){
-                playerStats.money += Demands.stoneBricks * (resources.processed.stoneBricks.price*shops);
-                playerStats.processed.stoneBricks -= Demands.stoneBricks*shops;
+            if(playerStats.processed.stoneBricks > demands.processed.stoneBricks*shops){
+                playerStats.money += demands.processed.stoneBricks * (resources.processed.stoneBricks.price*shops);
+                playerStats.processed.stoneBricks -= demands.processed.stoneBricks*shops;
             }
         }
         
@@ -289,9 +304,9 @@ function priceChange(resource: resource, productionBuildings: number, sell: bool
     if(resource.growth > 0){
         if(resource.growth > 100)resource.growth -= 100;
         else resource.growth = 0;
-        resource.t0 += 100;
-        resource.tsat += 500;
-    }else if(resource.price <= resource.minimum){
+        resource.t0 += 30;
+        resource.tsat += 60;
+    }else if(resource.price <= resource.minimum && resource.t0 < frame){
         resource.growth = (Math.random() * (10 - 1) + 1) * 1000;
     }
     const supply = sell ? getSupply(resource) : 0;
@@ -303,7 +318,7 @@ function priceChange(resource: resource, productionBuildings: number, sell: bool
     const aF = 0.05 * (maxDemand / Math.max(1, productionBuildings));
     const newPrice = resource.price += aF * (Demand - supply);
     resource.price = Math.max(resource.minimum, newPrice);
-    return Demand;
+    return Demand;  
 }
 
 //stats
