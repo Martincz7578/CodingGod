@@ -154,19 +154,21 @@ header span{
     cursor: pointer;
 }
 
-#rawdet, #procdet, #incomes{
+#rawdet{
     z-index: 20;
+    left: 7vw;
     bottom: -180%;
 }
 
-#rawdet{
-    left: 15%;
-}
-
 #procdet{
-    left: 20%;
+    z-index: 20;
+    left: 11vw;
+    bottom: -180%
 }
 
 #incomes{
-    left: 25%;
+    z-index: 20;
+    left: 16vw;
+    top: 2vw;
+    bottom: -320%;
 }

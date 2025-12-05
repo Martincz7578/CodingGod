@@ -24,6 +24,25 @@ let resources = {
     }
 };
 
+
+let incomeHistory: {
+    all: number[],
+    taxes: number[],
+    shops: {
+        all: number[],
+        steel: number[],
+        stoneBricks: number[]
+    }
+} = {
+    all: [],
+    taxes: [],
+    shops: {
+        all: [],
+        steel: [],
+        stoneBricks: []
+    }
+};
+
 let playerStats= {
     raw: {
         total: 0,
@@ -71,9 +90,6 @@ export function process(depots: number, foundries: number, shops: number, houses
         demands.processed.steel = Math.floor(priceChange(resources.processed.steel, foundries ? foundries : 1, shopsOpenned && shops > 0 ? shopsOpenned : false));
         demands.processed.stoneBricks = Math.floor(priceChange(resources.processed.stoneBricks, masons ? masons : 1, shopsOpenned && shops > 0 ? shopsOpenned : false));
 
-        console.log(demands);
-        console.log(resources);
-
         //raw resource gathering
         playerStats.raw.coal += mines * buildings.mines.productionSpeed * productionAmplifiers.mines;
         playerStats.raw.iron += mines * buildings.mines.productionSpeed * productionAmplifiers.mines;
@@ -104,16 +120,34 @@ export function process(depots: number, foundries: number, shops: number, houses
         //cash flow
         if(shopsOpenned && shops > 0){
             if(playerStats.processed.steel > demands.processed.steel*shops){
-                playerStats.money += demands.processed.steel * (resources.processed.steel.price*shops);
+                const steelIncome = demands.processed.steel * (resources.processed.steel.price*shops);
+                playerStats.money += steelIncome;
                 playerStats.processed.steel -= demands.processed.steel*shops;
+                incomeHistory.all.push(steelIncome);
+                incomeHistory.shops.all.push(steelIncome);
+                incomeHistory.shops.steel.push(steelIncome);
             }
             if(playerStats.processed.stoneBricks > demands.processed.stoneBricks*shops){
-                playerStats.money += demands.processed.stoneBricks * (resources.processed.stoneBricks.price*shops);
+                const stoneBricksIncome = demands.processed.stoneBricks * (resources.processed.stoneBricks.price*shops);
+                playerStats.money += stoneBricksIncome;
                 playerStats.processed.stoneBricks -= demands.processed.stoneBricks*shops;
+                incomeHistory.all.push(stoneBricksIncome);
+                incomeHistory.shops.all.push(stoneBricksIncome);
+                incomeHistory.shops.stoneBricks.push(stoneBricksIncome);
             }
+        }else{
+            incomeHistory.all.push(0);
+            incomeHistory.shops.all.push(0);
+            incomeHistory.shops.steel.push(0);
+            incomeHistory.all.push(0);
+            incomeHistory.shops.all.push(0);
+            incomeHistory.shops.stoneBricks.push(0);
         }
         
-        playerStats.money += (citizens.length ?? 1) * populationData.taxes / 100;
+        const taxesIncome = (citizens.length ?? 1) * populationData.taxes / 100;
+        playerStats.money += taxesIncome;
+        incomeHistory.all.push(taxesIncome);
+        incomeHistory.taxes.push(taxesIncome);
 
         //hunger process
         playerStats.food += farms * buildings.farm.productionSpeed;
@@ -411,9 +445,47 @@ function popupData(){
     Steel: ${playerStats.processed.steel.toFixed(0)}, Price: ${resources.processed.steel.price.toFixed(2)}<br>
     Stone Bricks: ${playerStats.processed.stoneBricks.toFixed(0)}, Price: ${resources.processed.stoneBricks.price.toFixed(2)}<br>`;
 
+    let inavrg = {
+        all: 0.00,
+        taxes: 0.00,
+        shops: {
+            all: 0.00,
+            steel: 0.00,
+            stoneBricks: 0.00
+        }
+
+    }
+
+    incomeHistory.all.forEach(value => {
+        inavrg.all += value;
+    });
+    inavrg.all = inavrg.all / incomeHistory.all.length;
+    incomeHistory.taxes.forEach(value => {
+        inavrg.taxes += value;
+    });
+    inavrg.taxes = inavrg.taxes / incomeHistory.taxes.length;
+    incomeHistory.shops.all.forEach(value => {
+        inavrg.shops.all += value;
+    });
+    inavrg.shops.all = inavrg.shops.all / incomeHistory.shops.all.length;
+    incomeHistory.shops.steel.forEach(value => {
+        inavrg.shops.steel += value;
+    });
+    inavrg.shops.steel = inavrg.shops.steel / incomeHistory.shops.steel.length;
+    incomeHistory.shops.stoneBricks.forEach(value => {
+        inavrg.shops.stoneBricks += value;
+    });
+    inavrg.shops.stoneBricks = inavrg.shops.stoneBricks / incomeHistory.shops.stoneBricks.length;
+
+
     moneyInfo.innerHTML = `Money:<br>
     Current Balance: $${playerStats.money.toFixed(2)}<br>
-    Income:`;
+    Income: $${inavrg.all.toFixed(2)} per second<br>
+    - From Taxes: $${inavrg.taxes.toFixed(2)} per second<br>
+    - From Shops: $${inavrg.shops.all.toFixed(2)} per second<br>
+    -- From Steel: $${inavrg.shops.steel.toFixed(2)} per second<br>
+    -- From Stone Bricks: $${inavrg.shops.stoneBricks.toFixed(2)} per second<br>
+    `;
 }   
 
 //terminals
