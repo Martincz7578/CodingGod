@@ -126,6 +126,8 @@ export function process(depots: number, foundries: number, shops: number, houses
                 incomeHistory.all.push(steelIncome);
                 incomeHistory.shops.all.push(steelIncome);
                 incomeHistory.shops.steel.push(steelIncome);
+            }else{
+                incomeHistory.shops.steel.push(0);
             }
             if(playerStats.processed.stoneBricks > demands.processed.stoneBricks*shops){
                 const stoneBricksIncome = demands.processed.stoneBricks * (resources.processed.stoneBricks.price*shops);
@@ -134,13 +136,13 @@ export function process(depots: number, foundries: number, shops: number, houses
                 incomeHistory.all.push(stoneBricksIncome);
                 incomeHistory.shops.all.push(stoneBricksIncome);
                 incomeHistory.shops.stoneBricks.push(stoneBricksIncome);
+            }else{
+                incomeHistory.shops.stoneBricks.push(0);
             }
         }else{
             incomeHistory.all.push(0);
             incomeHistory.shops.all.push(0);
             incomeHistory.shops.steel.push(0);
-            incomeHistory.all.push(0);
-            incomeHistory.shops.all.push(0);
             incomeHistory.shops.stoneBricks.push(0);
         }
         
