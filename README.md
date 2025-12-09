@@ -29,9 +29,9 @@ How to run
 
 Controls
 ---
-B - Building
-Space- place (Might change later)
-C - Clear
+B - Building <br>
+Space- place (Might change later) <br>
+C - Clear <br>
 
 And that's it! Enjoy!
 
