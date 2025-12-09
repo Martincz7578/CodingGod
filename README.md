@@ -26,6 +26,13 @@ How to run
     <li>run <code>php -S localhost:9000</code></li>
     <li>open <code>localhost:9000</code> in your browser</li>
 </ol>
+
+Controls
+---
+B - Building
+Space- place (Might change later)
+C - Clear
+
 And that's it! Enjoy!
 
-<p>!Side not: if you are hosting this game, you might need to reset cookies after updates!</p>
+<p>!Side note: if you are hosting this game, you might need to reset cookies after updates!</p>
