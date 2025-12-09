@@ -1,9 +1,7 @@
 Coding God
 ---
 
-A simple game in TypeScript, featuring base buidling, well only that for now. The game might change a lot.
-
-Saving has not been implemented, but will be very soon.
+A simple strategy game built in TypeScript where you manage base construction and develop your economy. Start small, expand your infrastructure, and optimize your economic growth as the game evolves. Build your empire through strategic planning, resource management, and careful decision-making. Each decision impacts your success, so choose wisely as you progress through increasingly challenging gameplay scenarios. Master the art of economic strategy, balance your priorities, and watch your empire flourish as you unlock new technologies and capabilities along your journey to becoming a true coding god.
 
 To play this game you need PHP 8.4 and TS 5.9.
 
