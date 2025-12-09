@@ -11,7 +11,15 @@ import type { data, Building } from "./buildings.js";
 
 interface resource  {name: string, price: number, k: number, minimum: number, growth: number, d: number, t0: number, tsat: number};
 
-let resources = {
+export function ecoAssignValues(ps: any, pd: any, d: any, inc: any, res: any){
+    playerStats = ps;
+    populationData = pd;
+    demands = d;
+    incomeHistory = inc;
+    resources = res;
+}
+
+export let resources = {
     raw: {
         coal: {name: "coal", price: 14, k: 0.20, minimum: 5, growth: 0, d: 0.2, t0: 100, tsat: 5000},
         iron: {name: "iron", price: 13, k: 0.15, minimum: 4, growth: 0, d: 0.4, t0: 200, tsat: 10000},
@@ -25,7 +33,7 @@ let resources = {
 };
 
 
-let incomeHistory: {
+export let incomeHistory: {
     all: number[],
     taxes: number[],
     shops: {
@@ -43,7 +51,7 @@ let incomeHistory: {
     }
 };
 
-let playerStats= {
+export let playerStats= {
     raw: {
         total: 0,
         coal: 0,
@@ -60,13 +68,13 @@ let playerStats= {
     food: 100
 };
 
-let populationData = {
+export let populationData = {
     taxes: 0,
     morale: 100,
     hunger: false,
 }
 
-let demands = {
+export let demands = {
     raw: {
         coal: 0,
         iron: 0,
@@ -79,7 +87,7 @@ let demands = {
     }
 }
 
-let shopsOpenned = false;
+export let shopsOpenned = false;
 
 export function process(depots: number, foundries: number, shops: number, houses: number, farms: number, mines: number, masons: number) {
     if(frame % 15 === 0){ //every second

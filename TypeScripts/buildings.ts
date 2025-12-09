@@ -399,3 +399,8 @@ export function removeBuildingAtPosition(position: position) {
 export function setBuildingState(set: boolean){
     buildingInProgress = set;
 }
+
+export function buildAssignValues(pb: any) {
+    placedBuildings = pb;
+    renderBuildings();
+}

@@ -1,5 +1,5 @@
-import { process, mpop, mpopClose, citizens } from './economy.js';
-import { buildingInProgress, checkBuildingPosition, preBuild, placedBuildings, buildingTypes, placeBuilding, setBuildingState, removeBuildingAtPosition } from './buildings.js';
+import { process, mpop, mpopClose, citizens, ecoAssignValues } from './economy.js';
+import { buildingInProgress, checkBuildingPosition, preBuild, placedBuildings, buildingTypes, placeBuilding, setBuildingState, removeBuildingAtPosition, buildAssignValues } from './buildings.js';
 
 /*
 export function pauseGame(){
@@ -191,5 +191,18 @@ addEventListener("keydown", function(event) {
         paused = false;
     }
 });*/
+
+export function loadJSON(saveSlot: number){
+    const dataStr = localStorage.getItem(`saveSlot${saveSlot}`);
+    if(dataStr){
+        const data = JSON.parse(dataStr);
+        placedBuildings.length = 0;
+        data.buildings.forEach((b: any) => placedBuildings.push(b));
+        citizens.length = 0;
+        data.citizens.forEach((c: any) => citizens.push(c));
+        ecoAssignValues(data.playerStats, data.populationData, data.demands, data.incomeHistory, data.resources);
+        buildAssignValues(data.buildings);
+    }
+}
 
 StartGame();

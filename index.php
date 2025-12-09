@@ -40,6 +40,8 @@ if(isset($_POST['theme'])){
         <span id="priceTag"></span>
         <span id="population"></span>
         <button id="productionTerminal">Production Terminal</button>
+        <script type="module" src="./Scripts/saveLoad.js"></script>
+        <button id="save/load">Save/Load</button>
     </header>
     <main>
         <canvas id="fg" width="800" height="600"></canvas>
