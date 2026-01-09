@@ -53,7 +53,6 @@ if(isset($_POST['theme'])){
                 <button class="build" value="foundry">Foundry</button><br>
                 <button class="build" value="shop">Shop</button><br>
                 <button class="build" value="farm">Farm</button><br>
-                <button class="build" value="depot">Depot</button><br>
                 <button class="build" value="mines">Mines</button><br>
                 <button class="build" value="path">Path</button><br>
                 <button class="build" value="mason">Mason</button>
@@ -63,12 +62,11 @@ if(isset($_POST['theme'])){
         <canvas id="pbg" width="800" height="600"></canvas>
         <canvas id="bg" width="800" height="600"></canvas>
     </main>
-    <img src="/imgs/depot.jpg" alt="" id="depot">
-    <img src="/imgs/foundry.jpg" alt="" id="foundry">
-    <img src="/imgs/farm.jpg" alt="" id="farm">
-    <img src="/imgs/house.jpg" alt="" id="house">
-    <img src="/imgs/store.jpg" alt="" id="store">
-    <img src="/imgs/mine.jpg" alt="" id="mine">
-    <img src="/imgs/mason.jpg" alt="" id="mason">
+    <img class="build-img" src="/imgs/foundry.jpg" alt="" id="foundry">
+    <img class="build-img" src="/imgs/farm.jpg" alt="" id="farm">
+    <img class="build-img" src="/imgs/house.jpg" alt="" id="house">
+    <img class="build-img" src="/imgs/store.jpg" alt="" id="store">
+    <img class="build-img" src="/imgs/mine.jpg" alt="" id="mine">
+    <img class="build-img" src="/imgs/mason.jpg" alt="" id="mason">
 </body>
 </html>
