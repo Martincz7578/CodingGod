@@ -65,8 +65,8 @@ if(isset($_POST['theme'])){
     <img class="build-img" src="/imgs/foundry.jpg" alt="" id="foundry">
     <img class="build-img" src="/imgs/farm.jpg" alt="" id="farm">
     <img class="build-img" src="/imgs/house.jpg" alt="" id="house">
-    <img class="build-img" src="/imgs/store.jpg" alt="" id="store">
-    <img class="build-img" src="/imgs/mine.jpg" alt="" id="mine">
+    <img class="build-img" src="/imgs/store.jpg" alt="" id="shop">
+    <img class="build-img" src="/imgs/mine.jpg" alt="" id="mines">
     <img class="build-img" src="/imgs/mason.jpg" alt="" id="mason">
     <img class="build-img" src="/imgs/path.png" alt="" id="path">
 </body>
