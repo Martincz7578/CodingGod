@@ -68,6 +68,5 @@ if(isset($_POST['theme'])){
     <img class="build-img" src="/imgs/store.jpg" alt="" id="shop">
     <img class="build-img" src="/imgs/mine.jpg" alt="" id="mines">
     <img class="build-img" src="/imgs/mason.jpg" alt="" id="mason">
-    <img class="build-img" src="/imgs/path.png" alt="" id="path">
 </body>
 </html>
